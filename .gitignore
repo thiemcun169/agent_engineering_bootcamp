@@ -1,0 +1,29 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+.venv*/
+venvAE*/
+venvAO*/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# lab outputs
+**/output/
+*.sqlite
+*.sqlite3
+*.sqlite-*
+checkpoints.db*
+
+# editors / OS
+.DS_Store
+.vscode/*
+!sessions/*/.vscode/
+!sessions/*/.vscode/settings.json
+!sessions/*/.vscode/extensions.json
+.idea/
+

@@ -1,0 +1,20 @@
+[project]
+name = "ae02-agent-loop-langgraph"
+version = "1.0.0"
+description = "Agent Engineering · Session 02 lab: agent loop, persistence, streaming and human-in-the-loop with LangGraph"
+requires-python = "==3.12.*"
+# Exact versions the notebooks were run with.
+dependencies = [
+    "langchain==1.4.2",
+    "langchain-openai==1.6.6",
+    "langgraph==1.2.12",
+    "langgraph-checkpoint-sqlite==3.1.1",
+    "tavily-python==0.8.4",
+    "python-dotenv==1.2.3",
+    "ipykernel==7.3.0",  # lets the IDE run the notebooks with this environment
+    "gradio==6.29.1",  # chat UI of the last section
+    "ipywidgets==8.1.9",  # progress widgets in notebooks (gradio imports tqdm)
+]
+
+[tool.uv]
+package = false  # a folder of notebooks, not an installable package
