@@ -1,0 +1,19 @@
+[project]
+name = "ae06-multi-agent"
+version = "1.0.0"
+description = "Agent Engineering · Session 06 lab: Multi-Agent Engineering"
+requires-python = "==3.12.*"
+# Exact versions the notebooks were run with.
+dependencies = [
+    "langchain==1.4.2",
+    "langchain-openai==1.6.6",
+    "langgraph==1.2.12",
+    "deepagents==0.7.19",
+    "python-dotenv==1.2.3",
+    "tavily-python==0.8.4",
+    "langgraph-cli[inmem]==0.4.33",  # `langgraph dev`: local Agent Server for the async subagents of Part 2
+    "ipykernel==7.3.0",  # lets the IDE run the notebooks with this environment
+]
+
+[tool.uv]
+package = false  # a folder of notebooks, not an installable package

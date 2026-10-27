@@ -1,0 +1,24 @@
+[project]
+name = "ae05-advanced-retrieval"
+version = "1.0.0"
+description = "Agent Engineering · Session 05 lab: Advanced Retrieval and Vector Databases for Agents"
+requires-python = "==3.12.*"
+# Exact versions the notebooks were run with.
+dependencies = [
+    "langchain==1.4.2",
+    "langchain-openai==1.6.6",
+    "langgraph==1.2.12",
+    "deepagents==0.7.19",
+    "python-dotenv==1.2.3",
+    "langchain-text-splitters==1.1.3",
+    "numpy==2.5.4",
+    "rank-bm25==0.2.2",
+    "qdrant-client==1.19.1",
+    "pymupdf==1.28.2",
+    "fastmcp==4.0.10",  # optional MCP server (app/kb_mcp_server.py)
+    "ngrok==1.7.0",  # optional public URL for the MCP server (Python SDK, no ngrok binary needed)
+    "ipykernel==7.3.0",  # lets the IDE run the notebooks with this environment
+]
+
+[tool.uv]
+package = false  # a folder of notebooks, not an installable package

@@ -1,0 +1,16 @@
+# Qdrant vector database for the Session 05 lab: `docker compose up -d`, stop with `docker compose down`
+# (the named volume keeps the data). Dashboard: http://localhost:6333/dashboard
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.19.2
+    container_name: qdrant-ae05
+    restart: unless-stopped   # starts again with Docker after a reboot, until `docker compose down`
+    ports:
+      - "127.0.0.1:6333:6333"   # REST API + web dashboard
+      - "127.0.0.1:6334:6334"   # gRPC
+    volumes:
+      - qdrant_ae05_data:/qdrant/storage
+
+volumes:
+  qdrant_ae05_data:
+    name: qdrant_ae05_data  # fixed name (otherwise compose prefixes the folder name)
