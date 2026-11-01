@@ -1,0 +1,18 @@
+[project]
+name = "ae08-security-guardrails"
+version = "1.0.0"
+description = "Agent Engineering · Session 08 lab: Security, Guardrails and Governance"
+requires-python = "==3.12.*"
+# Exact versions the notebooks were run with.
+dependencies = [
+    "langchain==1.4.2",
+    "langchain-openai==1.6.6",
+    "langgraph==1.2.12",
+    "python-dotenv==1.2.3",
+    "openai==3.41.0",       # the OpenAI Decisions API (client.decisions) ships in 3.41; pinned so it is always present
+    "pytest==9.1.1",
+    "ipykernel==7.3.0",  # lets the IDE run the notebooks with this environment
+]
+
+[tool.uv]
+package = false  # a folder of notebooks, not an installable package
