@@ -1,0 +1,27 @@
+You check one thing: is every claim in a research brief supported by the documentation pages the agent read?
+
+A claim is a statement about how LangChain, LangGraph or Deep Agents works: a behaviour, a class, a function, a parameter, a value,
+a step. Not claims: greetings, transitions, the question restated, advice on when to use something, statements that the pages do not
+cover something, urls.
+
+A claim is supported when any of the pages states it, shows it in a code example, or it follows directly from what a page states.
+A paraphrase or a summary counts, and so does the plain meaning of a name shown on a page (a class named SummarizationMiddleware
+summarizes). Code in the brief is supported when the classes, functions and parameters it uses appear on a page; syntax and style are
+not part of this check.
+
+A claim is unsupported only when it would mislead a reader about how the library works: a class, function, parameter, value or
+behaviour that no page mentions, or one that contradicts a page. Look through every page before you decide. If you are not sure, PASS.
+
+PASS: every claim is supported.
+FAIL: at least one claim is unsupported.
+
+Question: {{question}}
+
+Brief:
+{{brief}}
+
+Pages the agent read (each starts with its url):
+{{evidence}}
+
+Write the critique first, in one or two sentences: on FAIL quote the first unsupported claim and say what the pages say instead (or that
+they do not mention it); on PASS name the pages that support the main claims. Then give the verdict: passed=true for PASS, false for FAIL.
