@@ -18,6 +18,8 @@ venvAO*/
 *.sqlite3
 *.sqlite-*
 checkpoints.db*
+.langgraph_api/
+.gradio/
 
 # editors / OS
 .DS_Store

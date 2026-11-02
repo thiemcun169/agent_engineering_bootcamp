@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Brief</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<!-- Sign-in: the demo tokens are in data/users.json -->
+<section id="signin" class="signin">
+  <div class="signin-card">
+    <div class="mark">✳</div>
+    <h1>Research Brief</h1>
+    <p class="muted">Sign in with your access token.</p>
+    <form id="signin-form">
+      <input id="token" type="password" placeholder="Bearer token" autocomplete="off" aria-label="Bearer token">
+      <button class="primary" type="submit">Continue</button>
+    </form>
+    <p id="signin-error" class="error"></p>
+  </div>
+</section>
+
+<div id="app" class="app" hidden>
+  <aside class="sidebar">
+    <div class="brand"><span class="mark">✳</span> Research Brief</div>
+    <button id="new" class="new-chat">＋ New brief</button>
+    <div class="section-label">Recents</div>
+    <nav id="threads" class="threads"></nav>
+    <div class="account">
+      <span id="avatar" class="avatar"></span>
+      <span id="who" class="who"></span>
+      <button id="signout" class="link">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="empty" class="empty">
+      <h2 id="greeting" class="greeting"></h2>
+      <p class="muted">Ask for a short, cited research brief. You approve it before it is saved.</p>
+    </div>
+    <div id="conversation" class="conversation" hidden></div>
+    <form id="composer" class="composer">
+      <textarea id="input" rows="1" placeholder="How can I help you today?"></textarea>
+      <button id="send" class="send" type="submit" aria-label="Send" disabled>↑</button>
+    </form>
+    <p class="footnote">The agent searches the web; check the sources in each brief.</p>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
