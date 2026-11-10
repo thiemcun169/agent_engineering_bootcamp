@@ -1,45 +1,41 @@
-"""Helpers for the Session 09 notebooks: read the code of the app/ package, and call the running API with a user's
-token. The notebooks explain the service; the service itself lives in app/ and runs with `uv run fastapi run`."""
-import inspect
+"""Helpers for the Session 09 notebooks: call the running API with a user's token. The notebooks explain the service; the service itself lives in app/ and runs with `uv run fastapi run`."""
 import json
 import os
 import sys
 from pathlib import Path
 
 import httpx
-from IPython.display import Code
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))  # so `import app...` works from the notebooks folder
 BASE_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
-TOKENS = {u["user_id"]: u["token"] for u in json.loads((PROJECT_DIR / "data" / "users.json").read_text())["users"]}
-
-
-# ── Reading the code ──────────────────────────────────────────────────────────
-def source(obj) -> Code:
-    """The source of a function, class, module or LangChain tool, shown with syntax colours."""
-    obj = getattr(obj, "func", None) or obj  # a @tool wraps the function in a StructuredTool
-    return Code(inspect.getsource(obj), language="python")
-
-
-def tree() -> None:
-    """The app/ package: one line per file with the first line of its docstring."""
-    import ast
-    for path in sorted((PROJECT_DIR / "app").rglob("*")):
-        if "__pycache__" in path.parts or path.name == "__init__.py" or path.is_dir():
-            continue
-        rel = path.relative_to(PROJECT_DIR)
-        doc = ""
-        if path.suffix == ".py":
-            doc = (ast.get_docstring(ast.parse(path.read_text())) or "").split("\n")[0]
-        print(f"{str(rel):<32} {doc[:80]}")
+# Two demo accounts the notebooks create through the API (POST /auth/signup), like users of the app would.
+DEMO_USERS = {"alice": ("Alice", "alice-pass-2026"), "bob": ("Bob", "bob-pass-2026"), "carol": ("Carol", "carol-pass-2026")}
+_tokens: dict[str, str] = {}
 
 
 # ── Calling the API ───────────────────────────────────────────────────────────
+def sign_up_and_login(username: str) -> str:
+    """Create the demo account if needed (409 = it exists already), then log in: the OAuth2 password form returns a
+    JWT access token. Cached per notebook run."""
+    if username not in _tokens:
+        name, password = DEMO_USERS[username]
+        httpx.post(f"{BASE_URL}/auth/signup", json={"username": username, "password": password, "name": name})
+        r = httpx.post(f"{BASE_URL}/auth/token", data={"username": username, "password": password})
+        r.raise_for_status()
+        _tokens[username] = r.json()["access_token"]
+    return _tokens[username]
+
+
 def client(user: str | None) -> httpx.Client:
-    """An HTTP client that sends `Authorization: Bearer <token>` for a demo user (None = no token)."""
-    headers = {"Authorization": f"Bearer {TOKENS[user]}"} if user else {}
+    """An HTTP client that sends `Authorization: Bearer <JWT>` for a demo user (None = no token)."""
+    headers = {"Authorization": f"Bearer {sign_up_and_login(user)}"} if user else {}
     return httpx.Client(base_url=BASE_URL, headers=headers, timeout=httpx.Timeout(10, read=200))
+
+
+def short_token(token: str) -> str:
+    """Never print a whole token: it is a password for the next 30 minutes."""
+    return token[:20] + "…"
 
 
 def check_server() -> None:

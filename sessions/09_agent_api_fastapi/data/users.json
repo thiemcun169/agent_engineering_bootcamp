@@ -1,7 +1,0 @@
-{
-  "_comment": "Demo users of the lab. A real service gets users from an identity provider (OAuth/OIDC) and never stores tokens in a file.",
-  "users": [
-    {"user_id": "alice", "name": "Alice", "token": "alice-token-7f3a"},
-    {"user_id": "bob", "name": "Bob", "token": "bob-token-91c2"}
-  ]
-}

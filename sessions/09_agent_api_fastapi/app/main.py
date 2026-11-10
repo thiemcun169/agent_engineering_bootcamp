@@ -17,7 +17,7 @@ from langgraph.store.sqlite.aio import AsyncSqliteStore
 from app.agent.graph import build_agent
 from app.core.config import get_settings
 from app.core.errors import add_error_handlers
-from app.routers import health, runs, threads
+from app.routers import auth, health, runs, threads
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(name)s | %(message)s")
 for noisy in ("httpx", "httpx2"):  # HTTP clients log every request at INFO
@@ -32,8 +32,11 @@ async def lifespan(app: FastAPI):
     settings = get_settings()  # fails fast if a required key is missing
     os.environ.setdefault("OPENAI_API_KEY", settings.openai_api_key.get_secret_value())  # read by init_chat_model
     settings.data_dir.mkdir(exist_ok=True)
-    async with (AsyncSqliteSaver.from_conn_string(str(settings.data_dir / "checkpoints.db")) as checkpointer,
-                AsyncSqliteStore.from_conn_string(str(settings.data_dir / "threads.db")) as store):
+    # one database file, two connections: the checkpointer (conversation state per thread) and the store
+    # (thread and user records); SQLite's WAL mode lets both write to the same file
+    async with (AsyncSqliteSaver.from_conn_string(str(settings.db_path)) as checkpointer,
+                AsyncSqliteStore.from_conn_string(str(settings.db_path)) as store):
+        await checkpointer.setup()  # tables, and WAL mode for the file
         await store.setup()
         app.state.agent = build_agent(init_chat_model(settings.model), checkpointer)
         app.state.store = store
@@ -47,6 +50,7 @@ app = FastAPI(title="Research Brief Agent API", version="1.0.0", lifespan=lifesp
               description="Runs the Research Brief Agent per user and streams each run as Server-Sent Events.")
 add_error_handlers(app)
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(threads.router)
 app.include_router(runs.router)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")

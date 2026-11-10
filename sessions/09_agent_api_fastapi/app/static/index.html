@@ -4,20 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Research Brief</title>
-<link rel="stylesheet" href="/static/app.css">
+<!-- fonts with a Vietnamese subset (Source Serif 4, Inter, JetBrains Mono); offline the CSS falls back to Noto -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+<link rel="stylesheet" href="/static/app.css?v=3">
 </head>
 <body>
-<!-- Sign-in: the demo tokens are in data/users.json -->
+<!-- Sign in / create account: POST /auth/token (form) returns a JWT; POST /auth/signup creates the account -->
 <section id="signin" class="signin">
   <div class="signin-card">
     <div class="mark">✳</div>
     <h1>Research Brief</h1>
-    <p class="muted">Sign in with your access token.</p>
-    <form id="signin-form">
-      <input id="token" type="password" placeholder="Bearer token" autocomplete="off" aria-label="Bearer token">
-      <button class="primary" type="submit">Continue</button>
+    <div class="tabs" role="tablist">
+      <button id="tab-signin" class="tab active" type="button">Sign in</button>
+      <button id="tab-signup" class="tab" type="button">Create account</button>
+    </div>
+    <form id="auth-form" class="auth-form">
+      <input id="name" placeholder="Your name" autocomplete="name" hidden>
+      <input id="username" placeholder="Username" autocomplete="username" required>
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
+      <button id="auth-submit" class="primary" type="submit">Sign in</button>
     </form>
     <p id="signin-error" class="error"></p>
+    <p class="muted hint">Usernames: lowercase letters, digits, _ · passwords: 8+ characters.</p>
   </div>
 </section>
 
@@ -47,6 +57,6 @@
     <p class="footnote">The agent searches the web; check the sources in each brief.</p>
   </main>
 </div>
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=3"></script>
 </body>
 </html>

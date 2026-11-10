@@ -2,15 +2,17 @@
 // The browser's EventSource only sends GET and cannot set an Authorization header, so each run is read with
 // fetch() + ReadableStream and the text/event-stream body is parsed here (event / data / id, blank line = end).
 const $ = (id) => document.getElementById(id);
-const state = { token: sessionStorage.getItem("token") || "", user: null, threadId: null, busy: false };
+const state = { token: sessionStorage.getItem("token") || "", user: null, threadId: null, busy: false, mode: "signin" };
 
 // ── HTTP ──────────────────────────────────────────────────────────────────
 async function api(path, options = {}) {
   const res = await fetch(path, { ...options, headers: { Authorization: `Bearer ${state.token}`,
     "Content-Type": "application/json", ...(options.headers || {}) } });
+  if (res.status === 401 && path !== "/auth/token") { signOut("Your session expired. Please sign in again."); }
   if (!res.ok) {  // every error body is application/problem+json: {title, status, detail}
     const p = await res.json().catch(() => ({ title: res.statusText, detail: "" }));
-    throw new Error(`${p.title}: ${p.detail}`);
+    const detail = Array.isArray(p.errors) ? p.errors.map((e) => `${e.loc.at(-1)}: ${e.msg}`).join("; ") : p.detail;
+    throw new Error(`${p.title}: ${detail}`);
   }
   return res;
 }
@@ -160,34 +162,103 @@ function newBrief() {
 }
 
 async function send(text) {
-  if (!state.threadId) state.threadId = (await (await api("/threads", { method: "POST" })).json()).thread_id;
+  setBusy(true);  // before the first await: a second Enter must not start a second run
   userMessage(text);
+  try {
+    if (!state.threadId) state.threadId = (await (await api("/threads", { method: "POST" })).json()).thread_id;
+  } catch (err) { conversation.append(el("div", "notice error", err.message)); setBusy(false); return; }
   await stream(`/threads/${state.threadId}/runs`, { message: text });
 }
 
-async function signIn(token) {
-  state.token = token;
+// ── Sign in / create account ──────────────────────────────────────────────────
+function setMode(mode) {
+  state.mode = mode;
+  $("tab-signin").classList.toggle("active", mode === "signin");
+  $("tab-signup").classList.toggle("active", mode === "signup");
+  $("name").hidden = mode !== "signup"; $("name").required = mode === "signup";
+  $("auth-submit").textContent = mode === "signup" ? "Create account" : "Sign in";
+  $("password").autocomplete = mode === "signup" ? "new-password" : "current-password";
+  $("signin-error").textContent = "";
+}
+
+async function login(username, password) {
+  // OAuth2 password flow: form fields, not JSON
+  const res = await fetch("/auth/token", { method: "POST", body: new URLSearchParams({ username, password }) });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail);
+  return body.access_token;
+}
+
+async function submitAuth(e) {
+  e.preventDefault();
+  const username = $("username").value.trim().toLowerCase(), password = $("password").value;
   try {
-    state.user = await (await api("/me")).json();
-  } catch (err) { $("signin-error").textContent = err.message; return; }
+    if (state.mode === "signup") {
+      const res = await fetch("/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, name: $("name").value.trim() }) });
+      if (!res.ok) {
+        const p = await res.json();
+        throw new Error(Array.isArray(p.errors) ? p.errors.map((x) => `${x.loc.at(-1)}: ${x.msg}`).join("; ") : p.detail);
+      }
+    }
+    await enter(await login(username, password));
+  } catch (err) { $("signin-error").textContent = err.message; }
+}
+
+async function enter(token) {
+  state.token = token;
+  state.user = await (await api("/auth/me")).json();
   sessionStorage.setItem("token", token);
   $("signin").hidden = true; $("app").hidden = false;
-  $("who").textContent = state.user.name; $("avatar").textContent = state.user.name[0];
+  $("who").textContent = state.user.name; $("avatar").textContent = state.user.name[0].toUpperCase();
   $("greeting").textContent = `Good to see you, ${state.user.name}`;
   newBrief();
 }
 
-$("signin-form").onsubmit = (e) => { e.preventDefault(); signIn($("token").value.trim()); };
-$("signout").onclick = () => { sessionStorage.removeItem("token"); location.reload(); };
+function signOut(message = "") {
+  sessionStorage.removeItem("token"); state.token = ""; state.user = null;
+  $("app").hidden = true; $("signin").hidden = false; $("signin-error").textContent = message;
+  $("password").value = "";
+}
+
+$("tab-signin").onclick = () => setMode("signin");
+$("tab-signup").onclick = () => setMode("signup");
+$("auth-form").onsubmit = submitAuth;
+$("signout").onclick = () => signOut();
 $("new").onclick = newBrief;
-$("input").oninput = (e) => {
-  e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px`; setBusy(state.busy);
+// Vietnamese Telex (and CJK) input methods compose a word before committing it. Enter must wait for that commit,
+// otherwise the message is sent without it and the input method writes the word back into the cleared box.
+const input = $("input");
+let composing = false, sendAfterComposition = false;
+input.addEventListener("compositionstart", () => { composing = true; });
+input.addEventListener("compositionend", () => {
+  composing = false;
+  if (sendAfterComposition) { sendAfterComposition = false; setTimeout(submitInput, 0); }
+});
+input.oninput = () => {
+  input.style.height = "auto"; input.style.height = `${input.scrollHeight}px`; setBusy(state.busy);
 };
-$("input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("composer").requestSubmit(); } };
-$("composer").onsubmit = (e) => {
+input.onkeydown = (e) => {
+  const enter = e.key === "Enter" || e.code === "Enter" || e.code === "NumpadEnter";
+  if (!enter || e.shiftKey) return;
   e.preventDefault();
-  const text = $("input").value.trim();
-  if (!text || state.busy) return;
-  $("input").value = ""; $("input").style.height = "auto"; send(text);
+  if (composing || e.isComposing || e.keyCode === 229) {  // send on compositionend
+    sendAfterComposition = true;
+    setTimeout(() => {  // some input methods never end the composition on Enter: blur commits the word
+      if (!sendAfterComposition) return;
+      input.blur(); input.focus();
+      setTimeout(() => { if (sendAfterComposition) { sendAfterComposition = false; composing = false; submitInput(); } }, 0);
+    }, 300);
+    return;
+  }
+  setTimeout(submitInput, 0);  // next tick: a late commit from the input method lands in the box first
 };
-if (state.token) signIn(state.token);
+$("composer").onsubmit = (e) => { e.preventDefault(); submitInput(); };
+
+function submitInput() {
+  if (composing) { sendAfterComposition = true; input.blur(); input.focus(); return; }  // blur commits the word
+  const text = input.value.trim();
+  if (!text || state.busy) return;
+  input.value = ""; input.style.height = "auto"; send(text);
+}
+if (state.token) enter(state.token).catch(() => signOut());

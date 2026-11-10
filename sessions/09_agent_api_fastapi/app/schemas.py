@@ -20,6 +20,19 @@ class User(BaseModel):
     name: str
 
 
+class SignupRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    username: str = Field(min_length=3, max_length=32, pattern=r"^[a-z0-9_]+$", examples=["alice"])
+    password: str = Field(min_length=8, max_length=128)
+    name: str = Field(min_length=1, max_length=60, examples=["Alice"])
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int  # seconds
+
+
 class Thread(BaseModel):
     thread_id: str
     title: str
